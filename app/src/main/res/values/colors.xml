@@ -1,0 +1,7 @@
+<resources>
+    <!-- Matches AmberTerminal.background in TerminalTheme.kt — keep these in
+         sync if the default theme changes, since this is drawn by the OS
+         before any Compose code runs. -->
+    <color name="terminal_background">#0D0800</color>
+    <color name="icon_background">#101410</color>
+</resources>

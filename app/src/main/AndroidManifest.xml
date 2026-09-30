@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Broad filesystem access for our in-app file browser (Music/Journal/
+         Reading import) — Play Store gates this behind a Permission
+         Declaration Form; file-manager-style apps are an accepted category.
+         If that ever gets rejected, the fallback is scoped SAF pickers per
+         feature behind a build flavor — see conversation notes. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+        tools:ignore="ScopedStorage" />
+
+    <!-- WiFi Transfer: local HTTP server (WiFiTransferServer) that other
+         devices on the same network upload files to, mirroring the iOS
+         WiFiTransferServer/ImportMethodSheet feature. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Termi Packages: PackageBridgeManager (mDNS + HTTP) is the sole
+         Android transport — Nearby Connections (and its Bluetooth runtime
+         permissions) was dropped after proving unreliable on real target
+         hardware (custom-ROM retro handhelds frequently ship a Play
+         Services build missing the Nearby Connections module entirely).
+         CHANGE_WIFI_STATE/MULTICAST_STATE are normal (non-runtime)
+         permissions — the latter is required to hold a WiFi multicast
+         lock, since on real devices the WiFi driver silently drops mDNS's
+         multicast packets unless something explicitly asks it not to. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+    <!-- Android blocks plain-HTTP (cleartext) OUTGOING requests by default
+         for apps targeting modern SDKs — caught live as "cleartext HTTP
+         traffic ... not permitted" from PackageBridgeManager's sender-side
+         invite/upload calls to another device's embedded server. Safe to
+         allow app-wide here since every HTTP call this app ever makes
+         (WiFiTransferServer receiving uploads, PackageBridgeManager's
+         invite/transfer) is intentionally local-network device-to-device
+         traffic — this app never talks HTTP to the open internet. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="Termi"
+        android:theme="@style/Theme.Termi"
+        android:usesCleartextTraffic="true">
+        <service android:name=".music.PlaybackService"
+            android:foregroundServiceType="mediaPlayback" android:exported="false">
+            <intent-filter><action android:name="androidx.media3.session.MediaSessionService" /></intent-filter>
+        </service>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Termi">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

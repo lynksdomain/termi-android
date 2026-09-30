@@ -1,0 +1,46 @@
+name: Draft signed beta
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag (for example v0.1.0-beta.1)
+        required: true
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build signed APK
+        env:
+          TERMI_KEYSTORE_BASE64: ${{ secrets.TERMI_KEYSTORE_BASE64 }}
+          TERMI_KEYSTORE_PASSWORD: ${{ secrets.TERMI_KEYSTORE_PASSWORD }}
+          TERMI_KEY_ALIAS: ${{ secrets.TERMI_KEY_ALIAS }}
+          TERMI_KEY_PASSWORD: ${{ secrets.TERMI_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$TERMI_KEYSTORE_BASE64"
+          umask 077
+          export TERMI_KEYSTORE_PATH="$RUNNER_TEMP/termi-release.p12"
+          trap 'rm -f "$TERMI_KEYSTORE_PATH"' EXIT
+          printf '%s' "$TERMI_KEYSTORE_BASE64" | base64 --decode > "$TERMI_KEYSTORE_PATH"
+          python3 scripts/release.py
+      - name: Create draft prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          python3 -c 'import json,os; m=json.load(open("app/build/outputs/apk/release/output-metadata.json")); assert os.environ["RELEASE_TAG"] == "v"+m["elements"][0]["versionName"], "Tag must match versionName"'
+          gh release create "$RELEASE_TAG" dist/*.apk dist/SHA256SUMS --verify-tag --draft --prerelease --title "Termi Android $RELEASE_TAG" --notes-file docs/RELEASE_NOTES.md
