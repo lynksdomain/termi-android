@@ -18,7 +18,7 @@ Target: `v0.1.0-beta.1`. Publish as a prerelease with a signed APK and SHA-256 c
 - [x] Generate and verify the signed release APK.
 - [ ] Back up the signing key and credentials securely outside the repository.
 - [x] Add screenshots from the release build.
-- [ ] Create tag and GitHub draft prerelease; attach APK and SHA256SUMS.
+- [x] Create tag and GitHub draft prerelease; attach APK and SHA256SUMS.
 
 ## Validation observed on 2026-09-30
 
